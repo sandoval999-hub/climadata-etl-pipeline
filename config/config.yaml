@@ -1,0 +1,88 @@
+# =============================================================================
+# ClimaData Solutions — ETL Pipeline Configuration
+# =============================================================================
+# All pipeline parameters are externalized here.
+# Credentials are in .env (never in this file).
+
+# ── Target Cities ────────────────────────────────────────────────────────────
+cities:
+  - name: "San Salvador"
+    country: "El Salvador"
+    latitude: 13.6929
+    longitude: -89.2182
+
+  - name: "Santa Ana"
+    country: "El Salvador"
+    latitude: 14.6349
+    longitude: -89.5591
+
+  - name: "Guatemala City"
+    country: "Guatemala"
+    latitude: 14.6349
+    longitude: -90.5069
+
+  - name: "Tegucigalpa"
+    country: "Honduras"
+    latitude: 14.0723
+    longitude: -87.1921
+
+  - name: "Managua"
+    country: "Nicaragua"
+    latitude: 12.1150
+    longitude: -86.2362
+
+  - name: "San Jose"
+    country: "Costa Rica"
+    latitude: 9.9281
+    longitude: -84.0907
+
+  - name: "Panama City"
+    country: "Panama"
+    latitude: 8.9824
+    longitude: -79.5199
+
+  - name: "Santo Domingo"
+    country: "Dominican Republic"
+    latitude: 18.4861
+    longitude: -69.9312
+
+  - name: "Kingston"
+    country: "Jamaica"
+    latitude: 18.0179
+    longitude: -76.8099
+
+  - name: "San Juan"
+    country: "Puerto Rico"
+    latitude: 18.4655
+    longitude: -66.1057
+
+# ── API Configuration ────────────────────────────────────────────────────────
+api:
+  forecast_url: "https://api.open-meteo.com/v1/forecast"
+  historical_url: "https://archive-api.open-meteo.com/v1/archive"
+  hourly_variables: "temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code"
+  daily_variables: "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset"
+  timezone: "auto"
+  rate_limit_pause_seconds: 0.15
+  max_retries: 3
+  backoff_base_seconds: 1
+
+# ── Pipeline Parameters ─────────────────────────────────────────────────────
+pipeline:
+  historical_days: 90
+  batch_size: 100
+
+# ── Alert Thresholds ────────────────────────────────────────────────────────
+thresholds:
+  heat_index_temp_min: 27.0
+  heat_index_humidity_min: 40.0
+  heavy_rain_mm: 50.0
+  high_wind_kmh: 60.0
+
+# ── Validation Ranges ───────────────────────────────────────────────────────
+validation:
+  temperature_min: -10.0
+  temperature_max: 55.0
+  humidity_min: 0.0
+  humidity_max: 100.0
+  precipitation_min: 0.0
