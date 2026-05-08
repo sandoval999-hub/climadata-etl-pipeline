@@ -39,11 +39,16 @@ CREATE TABLE IF NOT EXISTS fact_hourly_weather (
     high_wind_alert     TINYINT(1)     DEFAULT 0,
     ingested_at         DATETIME       NOT NULL,
     PRIMARY KEY (city_id, timestamp),
-    CONSTRAINT fk_hourly_city FOREIGN KEY (city_id)
-        REFERENCES dim_cities(city_id) ON DELETE CASCADE,
     INDEX idx_hourly_timestamp (timestamp),
     INDEX idx_hourly_city_time (city_id, timestamp)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+PARTITION BY RANGE (YEAR(timestamp)) (
+    PARTITION p2024 VALUES LESS THAN (2025),
+    PARTITION p2025 VALUES LESS THAN (2026),
+    PARTITION p2026 VALUES LESS THAN (2027),
+    PARTITION p2027 VALUES LESS THAN (2028),
+    PARTITION p_max VALUES LESS THAN MAXVALUE
+);
 
 -- ── Fact: Daily Weather Data ────────────────────────────────────────────────
 -- Stores per-day aggregated meteorological data per city.
@@ -62,11 +67,16 @@ CREATE TABLE IF NOT EXISTS fact_daily_weather (
     high_wind_alert     TINYINT(1)     DEFAULT 0,
     ingested_at         DATETIME       NOT NULL,
     PRIMARY KEY (city_id, date),
-    CONSTRAINT fk_daily_city FOREIGN KEY (city_id)
-        REFERENCES dim_cities(city_id) ON DELETE CASCADE,
     INDEX idx_daily_date (date),
     INDEX idx_daily_city_date (city_id, date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+PARTITION BY RANGE (YEAR(date)) (
+    PARTITION p2024 VALUES LESS THAN (2025),
+    PARTITION p2025 VALUES LESS THAN (2026),
+    PARTITION p2026 VALUES LESS THAN (2027),
+    PARTITION p2027 VALUES LESS THAN (2028),
+    PARTITION p_max VALUES LESS THAN MAXVALUE
+);
 
 -- ── Log: Pipeline Executions ────────────────────────────────────────────────
 -- Tracks every pipeline run: when it started, how many rows it processed,

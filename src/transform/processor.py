@@ -17,7 +17,7 @@ import math
 from datetime import datetime, date, time, timezone
 from typing import Any, Optional
 
-from src.models import (
+from src.models.data_models import (
     City,
     DailyWeatherRecord,
     DiscardedRecord,

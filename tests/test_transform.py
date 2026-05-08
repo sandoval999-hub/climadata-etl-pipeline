@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.transform import (
+from src.transform.processor import (
     calculate_heat_index,
     _parse_timestamp,
     _parse_time_from_iso,
@@ -32,7 +32,7 @@ from src.transform import (
     transform_hourly,
     transform_daily,
 )
-from src.models import City, DiscardedRecord
+from src.models.data_models import City, DiscardedRecord
 
 
 # =============================================================================

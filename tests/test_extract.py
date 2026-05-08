@@ -21,14 +21,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.extract import _request_with_retry, extract_forecast, extract_historical, APIError
+from src.extract.api import _request_with_retry, extract_forecast, extract_historical, APIError
 
 
 class TestRequestWithRetry:
     """Test the core retry mechanism."""
 
-    @patch("src.extract.time.sleep")
-    @patch("src.extract.requests.get")
+    @patch("src.extract.api.time.sleep")
+    @patch("src.extract.api.requests.get")
     def test_successful_request(self, mock_get, mock_sleep):
         """200 response returns parsed JSON immediately."""
         mock_response = MagicMock()
@@ -46,8 +46,8 @@ class TestRequestWithRetry:
         assert result == {"hourly": {"time": []}}
         assert mock_get.call_count == 1
 
-    @patch("src.extract.time.sleep")
-    @patch("src.extract.requests.get")
+    @patch("src.extract.api.time.sleep")
+    @patch("src.extract.api.requests.get")
     def test_retry_on_server_error(self, mock_get, mock_sleep):
         """5xx error triggers retry, then succeeds on 2nd attempt."""
         error_response = MagicMock()
@@ -72,8 +72,8 @@ class TestRequestWithRetry:
         assert result == {"data": "ok"}
         assert mock_get.call_count == 2
 
-    @patch("src.extract.time.sleep")
-    @patch("src.extract.requests.get")
+    @patch("src.extract.api.time.sleep")
+    @patch("src.extract.api.requests.get")
     def test_no_retry_on_client_error(self, mock_get, mock_sleep):
         """4xx error raises APIError immediately (no retry)."""
         mock_response = MagicMock()
@@ -92,8 +92,8 @@ class TestRequestWithRetry:
 
         assert mock_get.call_count == 1  # No retry
 
-    @patch("src.extract.time.sleep")
-    @patch("src.extract.requests.get")
+    @patch("src.extract.api.time.sleep")
+    @patch("src.extract.api.requests.get")
     def test_all_retries_exhausted(self, mock_get, mock_sleep):
         """3 consecutive failures raise APIError."""
         mock_response = MagicMock()
@@ -113,8 +113,8 @@ class TestRequestWithRetry:
 
         assert mock_get.call_count == 3
 
-    @patch("src.extract.time.sleep")
-    @patch("src.extract.requests.get")
+    @patch("src.extract.api.time.sleep")
+    @patch("src.extract.api.requests.get")
     def test_timeout_triggers_retry(self, mock_get, mock_sleep):
         """Timeout exception triggers retry."""
         import requests as req
@@ -137,8 +137,8 @@ class TestRequestWithRetry:
         assert result == {"ok": True}
         assert mock_get.call_count == 2
 
-    @patch("src.extract.time.sleep")
-    @patch("src.extract.requests.get")
+    @patch("src.extract.api.time.sleep")
+    @patch("src.extract.api.requests.get")
     def test_connection_error_triggers_retry(self, mock_get, mock_sleep):
         """ConnectionError triggers retry."""
         import requests as req
@@ -165,7 +165,7 @@ class TestRequestWithRetry:
 class TestExtractForecast:
     """Test forecast extraction function."""
 
-    @patch("src.extract._request_with_retry")
+    @patch("src.extract.api._request_with_retry")
     def test_forecast_passes_correct_params(self, mock_request):
         """Verify forecast passes correct parameters to the API."""
         mock_request.return_value = {"hourly": {}, "daily": {}}
@@ -192,7 +192,7 @@ class TestExtractForecast:
 class TestExtractHistorical:
     """Test historical extraction function."""
 
-    @patch("src.extract._request_with_retry")
+    @patch("src.extract.api._request_with_retry")
     def test_historical_date_range(self, mock_request):
         """Verify historical uses correct date range."""
         mock_request.return_value = {"daily": {}}

@@ -36,5 +36,22 @@ services:
       - ./logs:/app/logs
     command: ["--mode", "all"]
 
+  airflow:
+    image: apache/airflow:2.9.1
+    container_name: climadata-airflow
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:////opt/airflow/airflow.db
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - .:/opt/airflow/app
+    ports:
+      - "8080:8080"
+    command: standalone
+
 volumes:
   mysql_data:

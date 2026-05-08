@@ -22,8 +22,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.load import DatabaseConnection
-from src.models import (
+from src.load.mysql import DatabaseConnection
+from src.models.data_models import (
     HourlyWeatherRecord,
     DailyWeatherRecord,
     DiscardedRecord,
@@ -77,7 +77,7 @@ class TestUpsertHourlyBatch:
             for i in range(count)
         ]
 
-    @patch("src.load.mysql.connector.connect")
+    @patch("src.load.mysql.mysql.connector.connect")
     def test_empty_records_returns_zero(self, mock_connect):
         """Empty record list returns 0 without any DB call."""
         env = {
@@ -89,7 +89,7 @@ class TestUpsertHourlyBatch:
         result = db.upsert_hourly_batch([])
         assert result == 0
 
-    @patch("src.load.mysql.connector.connect")
+    @patch("src.load.mysql.mysql.connector.connect")
     def test_batch_splitting(self, mock_connect):
         """250 records should produce 3 batches with batch_size=100."""
         env = {
@@ -110,7 +110,7 @@ class TestUpsertHourlyBatch:
         # executemany should be called 3 times (100 + 100 + 50)
         assert mock_cursor.executemany.call_count == 3
 
-    @patch("src.load.mysql.connector.connect")
+    @patch("src.load.mysql.mysql.connector.connect")
     def test_upsert_sql_is_parameterized(self, mock_connect):
         """SQL uses %s placeholders, never string concatenation."""
         env = {
@@ -156,7 +156,7 @@ class TestUpsertDailyBatch:
             for i in range(count)
         ]
 
-    @patch("src.load.mysql.connector.connect")
+    @patch("src.load.mysql.mysql.connector.connect")
     def test_daily_upsert_uses_correct_sql(self, mock_connect):
         """Daily UPSERT SQL contains correct table and ON DUPLICATE KEY."""
         env = {
@@ -183,7 +183,7 @@ class TestUpsertDailyBatch:
 class TestExecutionLog:
     """Test execution logging lifecycle."""
 
-    @patch("src.load.mysql.connector.connect")
+    @patch("src.load.mysql.mysql.connector.connect")
     def test_start_execution_returns_id(self, mock_connect):
         """start_execution inserts a log and returns the execution_id."""
         env = {
@@ -205,7 +205,7 @@ class TestExecutionLog:
         assert "INSERT INTO log_executions" in sql_used
         assert "%s" in sql_used
 
-    @patch("src.load.mysql.connector.connect")
+    @patch("src.load.mysql.mysql.connector.connect")
     def test_finish_execution_updates_record(self, mock_connect):
         """finish_execution updates the execution log with results."""
         env = {
@@ -238,7 +238,7 @@ class TestExecutionLog:
 class TestDiscardedBatch:
     """Test discarded data logging."""
 
-    @patch("src.load.mysql.connector.connect")
+    @patch("src.load.mysql.mysql.connector.connect")
     def test_insert_discarded_records(self, mock_connect):
         """Discarded records are inserted with correct SQL."""
         env = {
@@ -268,7 +268,7 @@ class TestDiscardedBatch:
         assert "log_discarded_data" in sql_used
         assert "%s" in sql_used
 
-    @patch("src.load.mysql.connector.connect")
+    @patch("src.load.mysql.mysql.connector.connect")
     def test_empty_discarded_skips_insert(self, mock_connect):
         """Empty discarded list does nothing."""
         env = {

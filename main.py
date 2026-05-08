@@ -16,11 +16,11 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from src.extract import extract_forecast, extract_historical, APIError
-from src.load import DatabaseConnection
-from src.models import City, ExecutionLog
-from src.transform import transform_daily, transform_hourly
-from src.utils import (
+from src.extract.api import extract_forecast, extract_historical, APIError
+from src.load.mysql import DatabaseConnection
+from src.models.data_models import City, ExecutionLog
+from src.transform.processor import transform_daily, transform_hourly
+from src.utils.helpers import (
     generate_report,
     generate_temperature_chart,
     load_config,

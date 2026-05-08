@@ -18,7 +18,7 @@ from typing import Optional
 import mysql.connector
 from mysql.connector import Error as MySQLError
 
-from src.models import (
+from src.models.data_models import (
     City,
     DailyWeatherRecord,
     DiscardedRecord,

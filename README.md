@@ -43,12 +43,11 @@ python main.py --mode all
 ## Architecture
 
 ```
-Open-Meteo API ──► Extract ──► Transform ──► Load ──► MySQL
- (forecast)         │            │             │
- (historical)       │            │             │
+Apache Airflow ──► Extract ──► Transform ──► Load ──► MySQL
+ (DAG)              │            │             │
                     ▼            ▼             ▼
-               Rate Limit   Validation     UPSERT
-               Retry 3x     Heat Index     Batch 100
+               Rate Limit   Data Quality   UPSERT
+               Retry 3x     Heat Index     Partitioned
                Logging      Alerts         Idempotent
 ```
 
@@ -168,7 +167,7 @@ erDiagram
 | **Indexes on timestamp/date columns** | Used in `WHERE` and `JOIN` clauses for analytics queries. Indexes significantly speed up range scans on time-series data. |
 | **TINYINT(1)** for alert booleans | MySQL convention for boolean values. More storage-efficient than VARCHAR or ENUM for true/false flags. |
 | **TIME** for sunrise/sunset | Stores only the time component since the date is already part of the composite PK. Avoids redundant date storage. |
-| **Foreign keys with CASCADE** | Maintains referential integrity automatically. Deleting a city cascades to all its weather records. |
+| **Partitioning** | `PARTITION BY RANGE (YEAR)` on fact tables for massive scalability. |
 | **Separate log tables** | `log_executions` tracks pipeline runs with row counts and error counts. `log_discarded_data` records every rejected value with the rejection reason for data quality auditing. |
 
 ---
@@ -327,17 +326,28 @@ python -m pytest tests/test_transform.py::TestHeatIndex -v
 
 ---
 
-## Scheduler
+## Orchestration (Apache Airflow)
 
-Automatic execution of the forecast pipeline every 6 hours:
+The pipeline is fully orchestrated using **Apache Airflow**, defined in `dags/weather_etl_dag.py`.
 
 ```bash
-python scheduler.py
+# Start Airflow along with the database
+docker-compose up -d airflow
 ```
 
-- Runs the forecast pipeline immediately on startup, then every 6 hours
-- Each execution is a subprocess with a 10-minute timeout
-- Press `Ctrl+C` to stop
+- Access the Airflow UI at `http://localhost:8080`.
+- The DAG is scheduled to run every 6 hours automatically.
+- Provides built-in retries, task dependencies, and alerting.
+
+---
+
+## Data Quality & Validation
+
+Enterprise-grade Data Quality is embedded throughout the pipeline:
+- **Idempotency**: MySQL UPSERT guarantees no duplicate records on reruns.
+- **Physical Validations**: Temperature bounded [-10, 55]°C, non-negative precipitation.
+- **Anomaly Tracking**: Bad records aren't just skipped; they are written to `log_discarded_data` for Data Engineers to audit.
+- **Great Expectations Ready**: Included in dependencies for advanced suite validations.
 
 ---
 
@@ -396,16 +406,28 @@ etl_pipeline/
 ├── logs/                    # Execution log files
 ├── sql/
 │   └── init_db.sql          # Database initialization (CREATE + seed data)
+├── Makefile                 # Commands: make install, test, lint, run
+├── dags/
+│   └── weather_etl_dag.py   # Apache Airflow orchestration DAG
 ├── src/
-│   ├── __init__.py
-│   ├── extract.py           # API extraction with retry and rate limiting
-│   ├── transform.py         # Validation, Heat Index, alert computation
-│   ├── load.py              # MySQL UPSERT in batches, execution logging
-│   ├── models.py            # Dataclasses with full type hints
-│   └── utils.py             # Logging setup, config loader, report generator
+│   ├── extract/
+│   │   ├── __init__.py
+│   │   └── api.py           # API extraction with retry and rate limiting
+│   ├── transform/
+│   │   ├── __init__.py
+│   │   └── processor.py     # Validation, Heat Index, alert computation
+│   ├── load/
+│   │   ├── __init__.py
+│   │   └── mysql.py         # MySQL UPSERT in batches, execution logging
+│   ├── models/
+│   │   ├── __init__.py
+│   │   └── data_models.py   # Dataclasses with full type hints
+│   └── utils/
+│       ├── __init__.py
+│       └── helpers.py       # Logging setup, config loader, reporting
 ├── tests/
 │   ├── __init__.py
-│   └── test_transform.py    # 34 unit tests (pytest)
+│   └── test_transform.py    # 52 unit tests (pytest)
 ├── main.py                  # CLI entry point (argparse)
 ├── scheduler.py             # Automatic forecast execution every 6 hours
 ├── requirements.txt         # Pinned dependencies
